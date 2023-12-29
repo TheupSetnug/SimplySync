@@ -42,11 +42,11 @@ def handle_member(member_id, name, operation_type):
     if operation_type == 'update':
         # Member updated, perform your action here
         print(f"Member {member_id} updated. Perform action.")
-        send_discord_message(f"{name} has stopped fronting.")
+        send_discord_message(f"~~*{name}* has dropped off.~~ 🔴")
     elif operation_type == 'insert':
         # Member inserted, perform your action here
         print(f"Member {member_id} inserted. Perform action.")
-        send_discord_message(f"{name} has started fronting.")
+        send_discord_message(f"*{name}* has come online. 🟢")
     else:
         print(f"Unknown operation type {operation_type}")
 
@@ -73,8 +73,16 @@ async def keep_alive(socket):
 
 async def handle_messages(socket):
     while True:
-        message = await socket.recv()
-        handle_message(message)
+        try:
+            message = await socket.recv()
+            # process message here
+            handle_message(message)
+        except Exception as e:
+            print(f"Connection lost. Attempting to reconnect...{e}")
+            await asyncio.sleep(5)  # wait before attempting to reconnect
+            # code to reconnect goes here
+            await authenticate(socket, API_TOKEN)
+
 
 def handle_message(message):
     if message == 'pong':
@@ -165,4 +173,15 @@ async def main():
             print("Authentication failed")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except websockets.exceptions.ConnectionClosedError as e:
+        print(f"Connection closed: {e}")
+        #reconnect
+        print("Reconnecting...")
+        asyncio.run(main())
+    except Exception as e:
+        print(f"Error: {e}")
+        #reconnect
+        print("Reconnecting...")
+        asyncio.run(main())
