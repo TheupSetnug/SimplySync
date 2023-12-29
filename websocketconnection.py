@@ -77,12 +77,6 @@ async def handle_messages(socket):
             message = await socket.recv()
             # process message here
             handle_message(message)
-        except Exception as e:
-            print(f"Connection lost. Attempting to reconnect...{e}")
-            await asyncio.sleep(5)  # wait before attempting to reconnect
-            # code to reconnect goes here
-            await authenticate(socket, API_TOKEN)
-
 
 def handle_message(message):
     if message == 'pong':
