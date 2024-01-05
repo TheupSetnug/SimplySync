@@ -88,6 +88,17 @@ async def update_status_message_loop():
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
+    #set all fronting statuses to false in members.yaml
+    members_file_path = 'members.yaml'
+    with open(members_file_path, 'r') as file:
+        members_data = yaml.safe_load(file)
+        if members_data is None:
+            members_data = {}
+    for member_id, member_data in members_data.items():
+        members_data[member_id]['fronting'] = False
+    with open(members_file_path, 'w') as file:
+        yaml.dump(members_data, file)
+    print(f"Set all fronting statuses to False in members.yaml")
     #use the status channel id from config.yaml to set the status channel, if there is one
     status_channel_id = config['STATUS_CHANNEL_ID']
     if status_channel_id is not None:

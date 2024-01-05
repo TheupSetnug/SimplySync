@@ -1,8 +1,10 @@
 import asyncio
 import websockets
+import socket
 import json
 import yaml
 import requests
+import logging
 
 #check if the file config.yaml exists and if not create it from config.yaml.example
 try:
@@ -103,6 +105,8 @@ async def handle_messages(socket):
             message = await socket.recv()
             # process message here
             handle_message(message)
+        except websockets.exceptions.ConnectionClosedError as e:
+            print(f"Connection closed: {e}")
 
 def handle_message(message):
     if message == 'pong':
@@ -168,6 +172,8 @@ def handle_front_history(member_id, operation_type):
         
         handle_member(member_id, name, operation_type)
 
+logging.basicConfig(level=logging.INFO)
+
 async def main():
     url = 'wss://api.apparyllis.com/v1/socket'
     token = API_TOKEN
@@ -192,16 +198,29 @@ async def main():
         else:
             print("Authentication failed")
 
-if __name__ == "__main__":
+def is_connected():
     try:
-        asyncio.run(main())
-    except websockets.exceptions.ConnectionClosedError as e:
-        print(f"Connection closed: {e}")
-        #reconnect
-        print("Reconnecting...")
-        asyncio.run(main())
-    except Exception as e:
-        print(f"Error: {e}")
-        #reconnect
-        print("Reconnecting...")
-        asyncio.run(main())
+        # connect to the host -- tells us if the host is actually reachable
+        socket.create_connection(("www.google.com", 80))
+        return True
+    except OSError:
+        pass
+    return False
+
+async def safe_main():
+    while True:
+        if is_connected():
+            try:
+                await main()
+            except websockets.exceptions.ConnectionClosedError as e:
+                logging.error(f"Connection closed: {e}")
+                await asyncio.sleep(60)
+            except Exception as e:
+                logging.error(f"Error: {e}")
+                await asyncio.sleep(60)
+        else:
+            logging.error("No internet connection. Waiting for connection...")
+            await asyncio.sleep(60)
+
+if __name__ == "__main__":
+    asyncio.run(safe_main())
