@@ -99,8 +99,10 @@ async def keep_alive(socket):
 
 async def handle_messages(socket):
     while True:
-        message = await socket.recv()
-        handle_message(message)
+        try:
+            message = await socket.recv()
+            # process message here
+            handle_message(message)
 
 def handle_message(message):
     if message == 'pong':
@@ -191,4 +193,15 @@ async def main():
             print("Authentication failed")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except websockets.exceptions.ConnectionClosedError as e:
+        print(f"Connection closed: {e}")
+        #reconnect
+        print("Reconnecting...")
+        asyncio.run(main())
+    except Exception as e:
+        print(f"Error: {e}")
+        #reconnect
+        print("Reconnecting...")
+        asyncio.run(main())
