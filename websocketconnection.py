@@ -1,7 +1,6 @@
 import asyncio
 import websockets
 import json
-import time
 import yaml
 import requests
 
@@ -23,32 +22,59 @@ with open('config.yaml') as f:
 
 API_TOKEN = config['API_TOKEN']
 SYSTEM_ID = config['SYSTEM_ID']
+WEBHOOK_POSTS = config['WEBHOOK_POSTS']
 WEBHOOK_URL = config['WEBHOOK_URL']
 
 def send_discord_message(message):
-    webhook_url = WEBHOOK_URL
+    if WEBHOOK_POSTS == True:
+        webhook_url = WEBHOOK_URL
 
-    payload = {'content': message}
-    headers = {'Content-Type': 'application/json'}
+        payload = {'content': message}
+        headers = {'Content-Type': 'application/json'}
 
-    response = requests.post(webhook_url, json=payload, headers=headers)
+        response = requests.post(webhook_url, json=payload, headers=headers)
 
-    if response.status_code == 204:
-        print(f"Discord message sent successfully: {message}")
+        if response.status_code == 204:
+            print(f"Discord message sent successfully: {message}")
+        else:
+            print(f"Failed to send Discord message. Status code: {response.status_code}")
+    elif WEBHOOK_POSTS == False:
+        print(f"Discord message not sent because WEBHOOK_POSTS is set to {WEBHOOK_POSTS} in config.yaml")
     else:
-        print(f"Failed to send Discord message. Status code: {response.status_code}")
+        print("WEBHOOK_POSTS is not set to True or False. Please check config.yaml")
 
 def handle_member(member_id, name, operation_type):
+    fronting_status = True if operation_type == 'insert' else False
     if operation_type == 'update':
         # Member updated, perform your action here
         print(f"Member {member_id} updated. Perform action.")
-        send_discord_message(f"{name} has stopped fronting.")
+        #send_discord_message(f"{name} has stopped fronting.")
+        #update the fronting status of the member in members.yaml
+        members_file_path = 'members.yaml'
+        with open(members_file_path, 'r') as file:
+            members_data = yaml.safe_load(file)
+            if members_data is None:
+                members_data = {}
+        members_data[member_id]['fronting'] = fronting_status
+        with open(members_file_path, 'w') as file:
+            yaml.dump(members_data, file)
+        print(f"Updated fronting status of {name} to False in members.yaml")
     elif operation_type == 'insert':
         # Member inserted, perform your action here
         print(f"Member {member_id} inserted. Perform action.")
-        send_discord_message(f"{name} has started fronting.")
+        #send_discord_message(f"{name} has started fronting.")
+        #update the fronting status of the member in members.yaml
+        members_file_path = 'members.yaml'
+        with open(members_file_path, 'r') as file:
+            members_data = yaml.safe_load(file)
+            if members_data is None:
+                members_data = {}
+        members_data[member_id]['fronting'] = fronting_status
+        with open(members_file_path, 'w') as file:
+            yaml.dump(members_data, file)
+        print(f"Updated fronting status of {name} to True in members.yaml")
     else:
-        print(f"Unknown operation type {operation_type}")
+        print(f"Unknown operation type {operation_type}, no action performed.")
 
 def get_member(MEMBER_ID):
     #https://api.apparyllis.com/v1/member/:systemId/:docId
@@ -133,7 +159,7 @@ def handle_front_history(member_id, operation_type):
         member = json.loads(get_member(member_id).text)
         #get the name of the member from the content of the member
         name = member.get('content', {}).get('name', {})
-        members_data[member_id] = {'name': name}
+        members_data[member_id] = {'name': name, 'fronting': False}
         with open(members_file_path, 'w') as file:
             yaml.dump(members_data, file)
         print(f"New member {name} added to members.yaml")
