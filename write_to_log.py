@@ -1,6 +1,12 @@
 from datetime import datetime
+import os
 
 def write_to_log(file, message):
+    #check if the directory exists and if not create it
+    directory = os.path.dirname(file)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        print(f"Created {directory}")
     #check if the file exists and if not create it
     try:
         with open(file, 'a') as file:

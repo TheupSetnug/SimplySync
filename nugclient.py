@@ -6,7 +6,7 @@ import asyncio
 import yaml
 
 #set up logging
-import write_to_log as log
+from  write_to_log import write_to_log as log
 log_path = 'logs/client.log'
 
 #check if the file config.yaml exists and if not create it from config.yaml.example

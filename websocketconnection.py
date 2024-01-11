@@ -8,7 +8,7 @@ import logging
 from datetime import datetime
 
 #set up logging
-import write_to_log as log
+from write_to_log import write_to_log as log
 log_path = 'logs/websocket.log'
 
 #check if the file config.yaml exists and if not create it from config.yaml.example
@@ -42,19 +42,19 @@ def send_discord_message(message):
         response = requests.post(webhook_url, json=payload, headers=headers)
 
         if response.status_code == 204:
-            log(websocket_log_path, f"Discord message sent successfully: {message}")
+            log(log_path, f"Discord message sent successfully: {message}")
         else:
-            log(websocket_log_path, f"Failed to send Discord message. Status code: {response.status_code}")
+            log(log_path, f"Failed to send Discord message. Status code: {response.status_code}")
     elif WEBHOOK_POSTS == False:
-        log(websocket_log_path, f"Discord message not sent because WEBHOOK_POSTS is set to {WEBHOOK_POSTS} in config.yaml")
+        log(log_path, f"Discord message not sent because WEBHOOK_POSTS is set to {WEBHOOK_POSTS} in config.yaml")
     else:
-        log(websocket_log_path,"WEBHOOK_POSTS is not set to True or False. Please check config.yaml")
+        log(log_path,"WEBHOOK_POSTS is not set to True or False. Please check config.yaml")
 
 def handle_member(member_id, name, operation_type):
     fronting_status = True if operation_type == 'insert' else False
     if operation_type == 'update':
         # Member updated, perform your action here
-        log(websocket_log_path, f"Member {member_id} updated. Perform action.")
+        log(log_path, f"Member {member_id} updated. Perform action.")
         #send_discord_message(f"{name} has stopped fronting.")
         #update the fronting status of the member in members.yaml
         members_file_path = 'members.yaml'
@@ -65,10 +65,10 @@ def handle_member(member_id, name, operation_type):
         members_data[member_id]['fronting'] = fronting_status
         with open(members_file_path, 'w') as file:
             yaml.dump(members_data, file)
-        log(websocket_log_path, f"Updated fronting status of {name} to False in members.yaml")
+        log(log_path, f"Updated fronting status of {name} to False in members.yaml")
     elif operation_type == 'insert':
         # Member inserted, perform your action here
-        log( websocket_log_path, f"Member {member_id} inserted. Perform action.")
+        log( log_path, f"Member {member_id} inserted. Perform action.")
         #send_discord_message(f"{name} has started fronting.")
         #update the fronting status of the member in members.yaml
         members_file_path = 'members.yaml'
@@ -79,9 +79,9 @@ def handle_member(member_id, name, operation_type):
         members_data[member_id]['fronting'] = fronting_status
         with open(members_file_path, 'w') as file:
             yaml.dump(members_data, file)
-        log( websocket_log_path, f"Updated fronting status of {name} to True in members.yaml")
+        log( log_path, f"Updated fronting status of {name} to True in members.yaml")
     else:
-        log( websocket_log_path, f"Unknown operation type {operation_type}, no action performed.")
+        log( log_path, f"Unknown operation type {operation_type}, no action performed.")
 
 def get_member(MEMBER_ID):
     #https://api.apparyllis.com/v1/member/:systemId/:docId
@@ -106,7 +106,7 @@ async def authenticate(socket, token):
     payload = {'op': 'authenticate', 'token': token}
     await socket.send(json.dumps(payload))
     response = await socket.recv()
-    log( websocket_log_path, response)
+    log( log_path, response)
 
 async def keep_alive(socket):
     while True:
@@ -120,17 +120,17 @@ async def handle_messages(socket):
             # process message here
             handle_message(message)
         except Exception as e:
-            log( websocket_log_path, f"Handle Messages Error: {e}")
+            log( log_path, f"Handle Messages Error: {e}")
             # exit the loop if an error occurs
             break
 
 def handle_message(message):
     if message == 'pong':
-        log( websocket_log_path, "Received pong")
+        log( log_path, "Received pong")
         return
     try:
         if not message:
-            log( websocket_log_path, "Message is empty")
+            log( log_path, "Message is empty")
             return
 
         parsed_message = json.loads(message)
@@ -140,19 +140,19 @@ def handle_message(message):
         if results is not None:
             for result in results:
                 operation_type = result.get('operationType', '')
-                log( websocket_log_path, operation_type)
+                log( log_path, operation_type)
                 content = result.get('content', {})
                 if content is not None:
                     member_id = content.get('member', '')
-                    log( websocket_log_path, member_id)
+                    log( log_path, member_id)
 
                 if target == 'frontHistory' and operation_type in ['update', 'insert']:
                     handle_front_history(member_id, operation_type)
 
     except json.JSONDecodeError as e:
-        log( websocket_log_path, f"Error decoding JSON: {e}")
+        log( log_path, f"Error decoding JSON: {e}")
     except Exception as e:
-        log( websocket_log_path, f"Error handling message: {e}")
+        log( log_path, f"Error handling message: {e}")
 
 def handle_front_history(member_id, operation_type):
     members_file_path = 'members.yaml'
@@ -164,7 +164,7 @@ def handle_front_history(member_id, operation_type):
     except FileNotFoundError:
         with open(members_file_path, 'w') as file:
             file.write('')
-            log( websocket_log_path, "Created members.yaml")
+            log( log_path, "Created members.yaml")
 
     with open(members_file_path, 'r') as file:
         members_data = yaml.safe_load(file)
@@ -173,7 +173,7 @@ def handle_front_history(member_id, operation_type):
 
     if member_id in members_data:
         # Member found, perform your action here
-        log( websocket_log_path, f"Member {member_id} found. Perform action.")
+        log( log_path, f"Member {member_id} found. Perform action.")
         name = members_data[member_id]['name']
         handle_member(member_id, name, operation_type)
     else:
@@ -184,7 +184,7 @@ def handle_front_history(member_id, operation_type):
         members_data[member_id] = {'name': name, 'fronting': False}
         with open(members_file_path, 'w') as file:
             yaml.dump(members_data, file)
-        log( websocket_log_path, f"New member {name} added to members.yaml")
+        log( log_path, f"New member {name} added to members.yaml")
         
         handle_member(member_id, name, operation_type)
 
@@ -201,7 +201,7 @@ async def main():
         # Check if authentication was successful
         response = await socket.recv()
         if "Successfully authenticated" in response:
-            log( websocket_log_path, "Authentication successful")
+            log( log_path, "Authentication successful")
             
             # Start a task to handle incoming messages
             message_task = asyncio.create_task(handle_messages(socket))
@@ -212,7 +212,7 @@ async def main():
             # Wait for both tasks to complete
             await asyncio.gather(message_task, keep_alive_task)
         else:
-            log( websocket_log_path, "Authentication failed")
+            log( log_path, "Authentication failed")
 
 def is_connected():
     try:
