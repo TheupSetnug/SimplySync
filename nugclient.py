@@ -5,6 +5,10 @@ import asyncio
 
 import yaml
 
+#set up logging
+import write_to_log as log
+log_path = 'logs/client.log'
+
 #check if the file config.yaml exists and if not create it from config.yaml.example
 try:
     with open('config.yaml', 'r') as file:
@@ -13,8 +17,8 @@ except FileNotFoundError:
     with open('config.yaml.example', 'r') as file:
         with open('config.yaml', 'w') as file2:
             file2.write(file.read())
-            print("Created config.yaml from config.yaml.example")
-            print("Please edit config.yaml with your own values or there will be errors.")
+            log(log_path, "Created config.yaml from config.yaml.example")
+            log(log_path, "Please edit config.yaml with your own values or there will be errors.")
             exit()
 
 #read the file config.yaml
@@ -28,12 +32,12 @@ bot = commands.Bot(command_prefix='!', description="This is a Helper Bot",intent
 
 async def startsocket():
     try:
-        print(f"starting websocket connection...")
+        log(log_path, f"starting websocket connection...")
         await websocketconnection.main()    
     except Exception as e:
-        print(f"Error with websocket: {e}")
+        log(log_path, f"Error with websocket: {e}")
         await asyncio.sleep(5)
-        print(f"Restarting websocket connection...")
+        log(log_path, f"Restarting websocket connection...")
         await startsocket()
     
 def compile_status_message():
@@ -82,12 +86,12 @@ async def update_status_message_loop():
         #check if the status message content is the same as the compiled status message content and trim whitespace
         if status_message.content.strip() != message_status_content.strip():
             await status_message.edit(content=message_status_content)
-            print(f"Status message edited")
+            log(log_path, f"Status message edited")
 
 
 @bot.event
 async def on_ready():
-    print(f'We have logged in as {bot.user}')
+    log(log_path, f'We have logged in as {bot.user}')
     #set all fronting statuses to false in members.yaml
     members_file_path = 'members.yaml'
     with open(members_file_path, 'r') as file:
@@ -98,34 +102,34 @@ async def on_ready():
         members_data[member_id]['fronting'] = False
     with open(members_file_path, 'w') as file:
         yaml.dump(members_data, file)
-    print(f"Set all fronting statuses to False in members.yaml")
+    log(log_path, f"Set all fronting statuses to False in members.yaml")
     #use the status channel id from config.yaml to set the status channel, if there is one
     status_channel_id = config['STATUS_CHANNEL_ID']
     if status_channel_id is not None:
         status_channel = bot.get_channel(int(status_channel_id))
-        print(f"Status channel set to: {status_channel_id}")
+        log(log_path, f"Status channel set to: {status_channel_id}")
         #set status_message_id from config.yaml, if there is one
         status_message_id = config['STATUS_MESSAGE_ID']
         if status_message_id is not None and status_message_id != "":
             #get the message from the status channel
             status_message = await status_channel.fetch_message(status_message_id)
-            print(f"Status message set to: {status_message_id}")
+            log(log_path, f"Status message set to: {status_message_id}")
         else:
-            print(f"No status message ID set in config.yaml")
+            log(log_path, f"No status message ID set in config.yaml")
             #create a new message in the status channel and set status_message_id in config.yaml
             status_message = await status_channel.send("Creating new status message...")
             status_message_id = f"{status_channel.last_message_id}"
             config['STATUS_MESSAGE_ID'] = status_message_id
             with open('config.yaml', 'w') as f:
                 yaml.dump(config, f)
-            print(f"Created new status message with ID: {status_message_id}")
+            log(log_path, f"Created new status message with ID: {status_message_id}")
         #compile the status message
         status_message_content = compile_status_message()
         #edit the status message
         await status_message.edit(content=status_message_content)
-        print(f"Status message edited to: {status_message_content}")
+        log(log_path, f"Status message edited to: {status_message_content}")
     else:
-        print(f"No status channel set in config.yaml, please set it manually")
+        log(log_path, f"No status channel set in config.yaml, please set it manually")
 
     #start websocket connection and keep running before its done
     asyncio.create_task(startsocket())
@@ -139,7 +143,7 @@ async def send(ctx, *, message):
     status_channel_id = config['STATUS_CHANNEL_ID']
     if int(channel_id_current) == int(status_channel_id):
         await ctx.send(message)
-        print(f"Sent message: {message} to channel: {channel_id_current}")
+        log(log_path, f"Sent message: {message} to channel: {channel_id_current}")
     else:
         await ctx.send("Channel not found. please deine the status channel in config.yaml")
         exit()
