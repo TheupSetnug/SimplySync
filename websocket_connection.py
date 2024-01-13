@@ -106,7 +106,7 @@ async def authenticate(socket, token):
     payload = {'op': 'authenticate', 'token': token}
     await socket.send(json.dumps(payload))
     response = await socket.recv()
-    log( log_path, response)
+    log(log_path, response)
 
 async def keep_alive(socket):
     while True:
@@ -222,21 +222,6 @@ def is_connected():
     except OSError:
         pass
     return False
-
-# async def safe_main():
-#     while True:
-#         if is_connected():
-#             try:
-#                 await main()
-#             except websockets.exceptions.ConnectionClosedError as e:
-#                 logging.error(f"Connection closed: {e}")
-#                 await asyncio.sleep(60)
-#             except Exception as e:
-#                 logging.error(f"Error: {e}")
-#                 await asyncio.sleep(60)
-#         else:
-#             logging.error("No internet connection. Waiting for connection...")
-#             await asyncio.sleep(60)
 
 if __name__ == "__main__":
     asyncio.run(main())

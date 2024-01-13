@@ -1,8 +1,9 @@
 import discord
 from discord.ext import commands
-import websocketconnection
+import websocket_connection
 import asyncio
-
+import requests
+import json
 import yaml
 
 #set up logging
@@ -26,6 +27,7 @@ with open('config.yaml') as f:
     config = yaml.load(f, Loader=yaml.FullLoader)
 
 discord_token = config['DISCORD_TOKEN']
+API_TOKEN = config['API_TOKEN']
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', description="This is a Helper Bot",intents=intents)
@@ -33,7 +35,7 @@ bot = commands.Bot(command_prefix='!', description="This is a Helper Bot",intent
 async def startsocket():
     try:
         log(log_path, f"starting websocket connection...")
-        await websocketconnection.main()    
+        await websocket_connection.main()    
     except Exception as e:
         log(log_path, f"Error with websocket: {e}")
         await asyncio.sleep(5)
@@ -59,11 +61,11 @@ def compile_status_message():
     
     #compile the status message formatted line by line in a block text for discord, or a message saying no fronters
     if len(fronting_members) > 0:
-        message_status_content = "Currently Available Members:\n"
+        message_status_content = "Currently Fronting, Co-Fronting, or Co-consious Members:\n"
         for member in fronting_members:
-            message_status_content += f"\n``🟢 {member}``"
+            message_status_content += f"``🟢 {member}``\n"
     else:
-        message_status_content = f"No one is fronting."
+        message_status_content = f"No one is here... *crickets*"
     return message_status_content
 
 async def update_status_message():
@@ -88,11 +90,32 @@ async def update_status_message_loop():
             await status_message.edit(content=message_status_content)
             log(log_path, f"Status message edited")
 
+def update_current_fronters():
+    url = "https://api.apparyllis.com/v1/fronters/"
+    payload={}
+    headers = {
+    'Authorization': API_TOKEN
+    }
+    response = requests.request("GET", url, headers=headers, data=payload)
+    response = json.loads(response.text)
 
-@bot.event
-async def on_ready():
-    log(log_path, f'We have logged in as {bot.user}')
-    #set all fronting statuses to false in members.yaml
+    member_ids = [item['content']['member'] for item in response]
+    for member_id in member_ids:
+        #update the fronting status of the member in members.yaml if it is not already true
+        members_file_path = 'members.yaml'
+        with open(members_file_path, 'r') as file:
+            members_data = yaml.safe_load(file)
+            if members_data is None:
+                members_data = {}
+        if members_data[member_id]['fronting'] == False:
+            members_data[member_id]['fronting'] = True
+            with open(members_file_path, 'w') as file:
+                yaml.dump(members_data, file)
+            log(log_path, f"Updated fronting status of {members_data[member_id]['name']} to True in members.yaml")
+        else:
+            log(log_path, f"Fronting status of {members_data[member_id]['name']} is already True in members.yaml. Skipping update.")
+ 
+def clear_fronting_statuses():
     members_file_path = 'members.yaml'
     with open(members_file_path, 'r') as file:
         members_data = yaml.safe_load(file)
@@ -103,6 +126,14 @@ async def on_ready():
     with open(members_file_path, 'w') as file:
         yaml.dump(members_data, file)
     log(log_path, f"Set all fronting statuses to False in members.yaml")
+
+@bot.event
+async def on_ready():
+    log(log_path, f'We have logged in as {bot.user}')
+    #clear all fronting statuses in members.yaml
+    clear_fronting_statuses()
+    #update the fronting statuses of all current fronters
+    update_current_fronters()
     #use the status channel id from config.yaml to set the status channel, if there is one
     status_channel_id = config['STATUS_CHANNEL_ID']
     if status_channel_id is not None:
