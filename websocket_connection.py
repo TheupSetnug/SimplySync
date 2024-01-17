@@ -174,7 +174,17 @@ def handle_front_history(member_id, operation_type):
     if member_id in members_data:
         # Member found, perform your action here
         log( log_path, f"Member {member_id} found. Perform action.")
-        name = members_data[member_id]['name']
+        yaml_name = members_data[member_id]['name']
+        #compare the name in members.yaml to the name in the member
+        member = json.loads(get_member(member_id).text)
+        #get the name of the member from the content of the member
+        name = member.get('content', {}).get('name', {})
+        if yaml_name != name:
+            log( log_path, f"Name in members.yaml ({yaml_name}) does not match name in member ({name}). Updating name in members.yaml.")
+            members_data[member_id]['name'] = name
+            with open(members_file_path, 'w') as file:
+                yaml.dump(members_data, file)
+            log( log_path, f"Updated name of {name} in members.yaml")
         handle_member(member_id, name, operation_type)
     else:
         # Member not found, add a new entry to members.yaml
