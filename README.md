@@ -17,5 +17,3 @@ This file contains various configuration settings for the application:
 - `BLACKLISTED_MEMBER_IDS`: This is a list of member IDs in SimplyPlural that are blacklisted.
 
 Please ensure to keep this file secure and do not share it publicly as it contains sensitive information. It is part of gitignore so it should not be committed to the repository.
-
-Added webhook for discord. Testing
