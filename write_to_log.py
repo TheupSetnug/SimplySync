@@ -1,9 +1,6 @@
 from datetime import datetime
 import os
 
-from datetime import datetime
-import os
-
 def write_to_log(file, message):
     # get the file name from the file path formatting in capital letters
     file_name = file.split('/')[-1].upper()

@@ -4,8 +4,6 @@ import socket
 import json
 import yaml
 import requests
-import logging
-from datetime import datetime
 
 #set up logging
 from write_to_log import write_to_log as log
@@ -148,6 +146,8 @@ def handle_message(message):
 
                 if target == 'frontHistory' and operation_type in ['update', 'insert']:
                     handle_front_history(member_id, operation_type)
+                else:
+                    log( log_path, f"Unknown target {target} or operation type {operation_type}, no action performed.")
 
     except json.JSONDecodeError as e:
         log( log_path, f"Error decoding JSON: {e}")
@@ -197,8 +197,6 @@ def handle_front_history(member_id, operation_type):
         log( log_path, f"New member {name} added to members.yaml")
         
         handle_member(member_id, name, operation_type)
-
-logging.basicConfig(level=logging.INFO)
 
 async def main():
     url = 'wss://api.apparyllis.com/v1/socket'
