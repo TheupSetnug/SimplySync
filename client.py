@@ -169,14 +169,14 @@ async def on_ready():
 
 
 @bot.command()
-async def send(ctx, *, message):
+async def reload(ctx):
     channel_id_current = ctx.channel.id
-    status_channel_id = config['STATUS_CHANNEL_ID']
-    if int(channel_id_current) == int(status_channel_id):
-        await ctx.send(message)
-        log(log_path, f"Sent message: {message} to channel: {channel_id_current}")
-    else:
-        await ctx.send("Channel not found. please deine the status channel in config.yaml")
-        exit()
+    clear_fronting_statuses()
+    update_current_fronters()
+    #update the status message  
+    await update_status_message()
+    #send a message to the channel the command was sent in
+    await ctx.send(f"Reloaded fronting statuses and current fronters.")
+    log(log_path, f"Reloaded fronting statuses and current fronters.")
 
 bot.run(discord_token)

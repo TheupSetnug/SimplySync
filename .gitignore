@@ -1,3 +1,4 @@
 members.yaml
 config.yaml
 logs/*
+__pycache__/*
