@@ -101,12 +101,24 @@ def update_current_fronters():
 
     member_ids = [item['content']['member'] for item in response]
     for member_id in member_ids:
+        from websocket_connection import get_member
+        member = get_member(member_id)
+        member = json.loads(member.text)
+        name = member['content']['name']
         #update the fronting status of the member in members.yaml if it is not already true
         members_file_path = 'members.yaml'
         with open(members_file_path, 'r') as file:
             members_data = yaml.safe_load(file)
             if members_data is None:
                 members_data = {}
+            #if there is no entry for the member in members.yaml, create one
+            if member_id not in members_data:
+                members_data[member_id] = {}
+                members_data[member_id]['name'] = name
+                members_data[member_id]['fronting'] = False
+                with open(members_file_path, 'w') as file:
+                    yaml.dump(members_data, file)
+                log(log_path, f"Created entry for {name} in members.yaml")
         if members_data[member_id]['fronting'] == False:
             members_data[member_id]['fronting'] = True
             with open(members_file_path, 'w') as file:
@@ -117,15 +129,24 @@ def update_current_fronters():
  
 def clear_fronting_statuses():
     members_file_path = 'members.yaml'
+    #if members.yaml does not exist, create it
+    try:
+        with open(members_file_path, 'r') as file:
+            pass
+    except FileNotFoundError:
+        with open(members_file_path, 'w') as file:
+            file.write('')
+            log(log_path, "Created members.yaml")
     with open(members_file_path, 'r') as file:
         members_data = yaml.safe_load(file)
         if members_data is None:
             members_data = {}
-    for member_id, member_data in members_data.items():
-        members_data[member_id]['fronting'] = False
-    with open(members_file_path, 'w') as file:
-        yaml.dump(members_data, file)
-    log(log_path, f"Set all fronting statuses to False in members.yaml")
+        else:
+            for member_id, member_data in members_data.items():
+                members_data[member_id]['fronting'] = False
+            with open(members_file_path, 'w') as file:
+                yaml.dump(members_data, file)
+            log(log_path, f"Set all fronting statuses to False in members.yaml")
 
 @bot.event
 async def on_ready():
@@ -161,15 +182,12 @@ async def on_ready():
         log(log_path, f"Status message edited to: {status_message_content}")
     else:
         log(log_path, f"No status channel set in config.yaml, please set it manually")
-
     #start websocket connection and keep running before its done
     asyncio.create_task(startsocket())
-
     asyncio.create_task(update_status_message_loop())
 
-
 @bot.command()
-async def reload(ctx):
+async def reload(ctx, *, message):
     channel_id_current = ctx.channel.id
     clear_fronting_statuses()
     update_current_fronters()
