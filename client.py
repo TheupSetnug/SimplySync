@@ -180,21 +180,40 @@ async def on_ready():
         #edit the status message
         await status_message.edit(content=status_message_content)
         log(log_path, f"Status message edited to: {status_message_content}")
+        #add the green circle emoji to the status message if it is not already there
+        if '🟢' not in [reaction.emoji for reaction in status_message.reactions]:
+            await status_message.add_reaction('🟢')
+            log(log_path, f"Added green circle emoji to status message")
+        else:
+            log(log_path, f"Green circle emoji already in status message")
     else:
         log(log_path, f"No status channel set in config.yaml, please set it manually")
     #start websocket connection and keep running before its done
     asyncio.create_task(startsocket())
     asyncio.create_task(update_status_message_loop())
 
+#create an event when a reaction is added to a message
+#this doesnt work yet, but I am leaving it here for future reference
+@bot.event
+async def on_reaction_add(reaction, user):
+    print(reaction)
+    if message.message_id == config['STATUS_MESSAGE_ID']:
+        member = utils.get(message.guild.members, id=message.user_id)
+        print(member)
+        
+
 @bot.command()
-async def reload(ctx, *, message):
-    channel_id_current = ctx.channel.id
+async def reload(ctx):
+    message = ctx.message
+    #delete the message that triggered the command
+    await ctx.message.delete()
+    #reload the fronting statuses
     clear_fronting_statuses()
     update_current_fronters()
     #update the status message  
     await update_status_message()
-    #send a message to the channel the command was sent in
-    await ctx.send(f"Reloaded fronting statuses and current fronters.")
+    #send a message to the user who triggered the command in a direct message
+    await ctx.author.send(f"Reloaded fronting statuses and current fronters.")
     log(log_path, f"Reloaded fronting statuses and current fronters.")
 
 bot.run(discord_token)
