@@ -1,6 +1,8 @@
 # SimplySync
 This is a Discord bot that syncs who is fronting in a system in SimplyPlural to a Discord server.
 
+The file called working_script is just a testing script. It doesn't do anything.
+
 ## Configuration File (config.yaml)
 
 There is a configuration file called `config.yaml.example` that you can use as a template for creating your own configuration file. You can copy this file and rename it to `config.yaml` and then fill in the values.
