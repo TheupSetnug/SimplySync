@@ -161,7 +161,23 @@ def update_current_fronters():
             log(log_path, f"Fronting status of {members_data[member_id]['name']} is already True in members.yaml. Skipping update.")
  
 def clear_fronting_statuses():
-    members_file_path = 'members.yaml'
+#set the path to members.yaml. it is in members/system_id/members.yaml
+    system_directory_path = f"members/{SYSTEM_ID}/"
+    members_file_path = f"members/{SYSTEM_ID}/members.yaml"
+
+    try:
+        os.mkdir('members')
+        log(log_path, f"Created directory members")
+    except FileExistsError:
+        pass
+    #check if the directory members/system_id exists and if not create it
+    try:
+        os.mkdir(system_directory_path)
+        log(log_path, f"Created directory {system_directory_path}")
+    except FileExistsError:
+        pass
+
+
     #if members.yaml does not exist, create it
     try:
         with open(members_file_path, 'r') as file:
@@ -169,7 +185,13 @@ def clear_fronting_statuses():
     except FileNotFoundError:
         with open(members_file_path, 'w') as file:
             file.write('')
-            log(log_path, "Created members.yaml")
+            log(log_path, f"Created {members_file_path}")
+
+    #if members.yaml exists, load it
+    with open(members_file_path, 'r') as file:
+        members_data = yaml.safe_load(file)
+        if members_data is None:
+            members_data = {}
     with open(members_file_path, 'r') as file:
         members_data = yaml.safe_load(file)
         if members_data is None:
@@ -249,4 +271,8 @@ async def reload(ctx):
     log(log_path, f"Reloaded fronting statuses and current fronters.")
 
 
-bot.run(discord_token)
+def main():
+    bot.run(discord_token)
+
+if __name__ == "__main__":
+    main()

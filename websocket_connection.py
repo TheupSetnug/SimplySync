@@ -27,26 +27,6 @@ with open('config.yaml') as f:
 
 API_TOKEN = config['API_TOKEN']
 SYSTEM_ID = config['SYSTEM_ID']
-WEBHOOK_POSTS = config['WEBHOOK_POSTS']
-WEBHOOK_URL = config['WEBHOOK_URL']
-
-def send_discord_message(message):
-    if WEBHOOK_POSTS == True:
-        webhook_url = WEBHOOK_URL
-
-        payload = {'content': message}
-        headers = {'Content-Type': 'application/json'}
-
-        response = requests.post(webhook_url, json=payload, headers=headers)
-
-        if response.status_code == 204:
-            log(log_path, f"Discord message sent successfully: {message}")
-        else:
-            log(log_path, f"Failed to send Discord message. Status code: {response.status_code}")
-    elif WEBHOOK_POSTS == False:
-        log(log_path, f"Discord message not sent because WEBHOOK_POSTS is set to {WEBHOOK_POSTS} in config.yaml")
-    else:
-        log(log_path,"WEBHOOK_POSTS is not set to True or False. Please check config.yaml")
 
 def get_member(MEMBER_ID):
     url = f"https://api.apparyllis.com/v1/member/{SYSTEM_ID}/{MEMBER_ID}"
