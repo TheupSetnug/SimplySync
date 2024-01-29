@@ -1,10 +1,35 @@
-API_TOKEN: ""
-SYSTEM_ID: ""
-WEBHOOK_POSTS: false
-WEBHOOK_URL: ""
-STATUS_MESSAGE_ID: ""
-DISCORD_TOKEN: ""
-STATUS_CHANNEL_ID: ""
-BLACKLISTED_MEMBER_IDS: []
-OPENAI_API_KEY: ""
-```
+#this indicated if the initilization process has been completed. if set to false it will run through it on the next startup or bot trigger
+INITILIZED: false
+
+#list of parameters for the self help initilization process. a description of each parameter is listed below that will be displayed to the user in sequence
+self_help_parameters:
+  INITIAL_MESSAGE: 'self help text here'
+  API_TOKEN: 'self help text here'
+  OPENAI_API_KEY: 'self help text here'
+  STATUS_CHANNEL_ID: 'self help text here'
+  SYSTEM_ID: 'self help text here'
+
+### DISCORD ###
+#discord token for the bot
+DISCORD_TOKEN: 
+
+#channel id for the bot to post status update messages to
+STATUS_CHANNEL_ID: ''
+
+#message id for the bot to edit with status updates. This is created automatically by the bot if it does not exist in the status channel
+STATUS_MESSAGE_ID: ''
+
+### OPENAI ###
+#optional key to use the openai api
+OPENAI_API_KEY: 
+
+### SIMPLYPLURAL ###
+#api token for SimnplyPlural
+API_TOKEN: 
+
+#id of the system in SimplyPlural
+SYSTEM_ID: 
+
+#list of member ids that are blacklisted from being displayed in the system (for privacy reasons)
+BLACKLISTED_MEMBER_IDS:
+- example_member_id
