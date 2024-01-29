@@ -1,8 +1,8 @@
+members/
 members.yaml
 config.yaml
 logs/*
 local/*
-```
 __pycache__/*
 working_script.py
 ```

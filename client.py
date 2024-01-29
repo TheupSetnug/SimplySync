@@ -5,6 +5,7 @@ import asyncio
 import requests
 import json
 import yaml
+import os
 
 #set up logging
 from  write_to_log import write_to_log as log
@@ -28,6 +29,7 @@ with open('config.yaml') as f:
 
 discord_token = config['DISCORD_TOKEN']
 API_TOKEN = config['API_TOKEN']
+SYSTEM_ID = config['SYSTEM_ID']
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', description="This is a Helper Bot",intents=intents)
@@ -42,9 +44,9 @@ async def startsocket():
         log(log_path, f"Restarting websocket connection...")
         await startsocket()
     
-def compile_status_message():
+def compile_status_message(SYSTEM_ID):
     #load members.yaml
-    members_file_path = 'members.yaml'
+    members_file_path = f'members/{SYSTEM_ID}/members.yaml'
     with open(members_file_path, 'r') as file:
         members_data = yaml.safe_load(file)
     
@@ -69,7 +71,7 @@ def compile_status_message():
     return message_status_content
 
 async def update_status_message():
-    message_status_content = compile_status_message()
+    message_status_content = compile_status_message(SYSTEM_ID)
     status_channel_id = config['STATUS_CHANNEL_ID']
     status_message_id = config['STATUS_MESSAGE_ID']
     status_channel = bot.get_channel(int(status_channel_id))
@@ -80,7 +82,7 @@ async def update_status_message_loop():
     #check for updates every 10 seconds, and skip if there are no updates
     while True:
         await asyncio.sleep(10)
-        message_status_content = compile_status_message()
+        message_status_content = compile_status_message(SYSTEM_ID)
         status_channel_id = config['STATUS_CHANNEL_ID']
         status_message_id = config['STATUS_MESSAGE_ID']
         status_channel = bot.get_channel(int(status_channel_id))
@@ -99,6 +101,37 @@ def update_current_fronters():
     response = requests.request("GET", url, headers=headers, data=payload)
     response = json.loads(response.text)
 
+    #set the path to members.yaml. it is in members/system_id/members.yaml
+    system_directory_path = f"members/{SYSTEM_ID}/"
+    members_file_path = f"members/{SYSTEM_ID}/members.yaml"
+
+    try:
+        os.mkdir('members')
+        log(log_path, f"Created directory members")
+    except FileExistsError:
+        pass
+    #check if the directory members/system_id exists and if not create it
+    try:
+        os.mkdir(system_directory_path)
+        log(log_path, f"Created directory {system_directory_path}")
+    except FileExistsError:
+        pass
+
+
+    #if members.yaml does not exist, create it
+    try:
+        with open(members_file_path, 'r') as file:
+            pass
+    except FileNotFoundError:
+        with open(members_file_path, 'w') as file:
+            file.write('')
+            log(log_path, f"Created {members_file_path}")
+    #if members.yaml exists, load it
+    with open(members_file_path, 'r') as file:
+        members_data = yaml.safe_load(file)
+        if members_data is None:
+            members_data = {}
+
     member_ids = [item['content']['member'] for item in response]
     for member_id in member_ids:
         from websocket_connection import get_member
@@ -106,7 +139,7 @@ def update_current_fronters():
         member = json.loads(member.text)
         name = member['content']['name']
         #update the fronting status of the member in members.yaml if it is not already true
-        members_file_path = 'members.yaml'
+
         with open(members_file_path, 'r') as file:
             members_data = yaml.safe_load(file)
             if members_data is None:
@@ -176,7 +209,7 @@ async def on_ready():
                 yaml.dump(config, f)
             log(log_path, f"Created new status message with ID: {status_message_id}")
         #compile the status message
-        status_message_content = compile_status_message()
+        status_message_content = compile_status_message(SYSTEM_ID)
         #edit the status message
         await status_message.edit(content=status_message_content)
         log(log_path, f"Status message edited to: {status_message_content}")
@@ -200,7 +233,6 @@ async def on_reaction_add(reaction, user):
     if message.message_id == config['STATUS_MESSAGE_ID']:
         member = utils.get(message.guild.members, id=message.user_id)
         print(member)
-        
 
 @bot.command()
 async def reload(ctx):
@@ -210,10 +242,11 @@ async def reload(ctx):
     #reload the fronting statuses
     clear_fronting_statuses()
     update_current_fronters()
-    #update the status message  
+    #update the status message
     await update_status_message()
     #send a message to the user who triggered the command in a direct message
     await ctx.author.send(f"Reloaded fronting statuses and current fronters.")
     log(log_path, f"Reloaded fronting statuses and current fronters.")
+
 
 bot.run(discord_token)
