@@ -2,12 +2,12 @@
 INITILIZED: false
 
 #list of parameters for the self help initilization process. a description of each parameter is listed below that will be displayed to the user in sequence
-self_help_parameters:
-  INITIAL_MESSAGE: 'self help text here'
-  API_TOKEN: 'self help text here'
-  OPENAI_API_KEY: 'self help text here'
-  STATUS_CHANNEL_ID: 'self help text here'
-  SYSTEM_ID: 'self help text here'
+HELP_URL: 'enter url here'
+INITILIZATION_PARAMETERS:
+  API_TOKEN: 'Enter api token for SimplyPlural:'
+  OPENAI_API_KEY: 'Enter openai api key (optional - press enter to skip):'
+  STATUS_CHANNEL_ID: 'Enter the channel id for the bot to post status updates to:'
+  SYSTEM_ID: 'Enter the system id for SimplyPlural:'
 
 ### DISCORD ###
 #discord token for the bot
@@ -24,7 +24,7 @@ STATUS_MESSAGE_ID: ''
 OPENAI_API_KEY: 
 
 ### SIMPLYPLURAL ###
-#api token for SimnplyPlural
+#api token for SimplyPlural
 API_TOKEN: 
 
 #id of the system in SimplyPlural

@@ -34,6 +34,31 @@ SYSTEM_ID = config['SYSTEM_ID']
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', description="This is a Helper Bot",intents=intents)
 
+def initialize():
+    if config['INITILIZED'] == False:
+        log(log_path, f"Running initialization for the first time... \nyou can find more help online here {config['HELP_URL']}")
+        for parameter, value in config['INITILIZATION_PARAMETERS'].items():
+            #check if the parameter is already in config.yaml and has a value
+            if parameter not in config or config[parameter] is None:
+                log(log_path, f"Parameter {parameter} not found in config.yaml")
+                input_value = input(f"{value}")
+                if input_value != "":
+                    config[parameter] = input_value
+                    with open('config.yaml', 'w') as f:
+                        yaml.dump(config, f)
+                    log(log_path, f"Set {parameter} to {input_value} in config.yaml based on user input")
+            else:
+                log(log_path, f"Parameter {parameter} already found in config.yaml")
+        config['INITILIZED'] = True
+        with open('config.yaml', 'w') as f:
+            yaml.dump(config, f)
+        log(log_path, f"Set INITILIZED to True in config.yaml")
+    else:
+        log(log_path, f"no initialization")
+        pass
+
+initialize()
+
 async def startsocket():
     try:
         log(log_path, f"starting websocket connection...")
